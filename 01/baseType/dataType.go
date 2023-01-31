@@ -5,9 +5,6 @@ import (
 	"fmt"
 )
 
-type brand struct {
-}
-
 // 整型
 var smallInt int8 = 1 << 6
 var unsignedSmallInt uint8 = 1 << 7
@@ -25,7 +22,7 @@ func main() {
 	fmt.Println(longInt)
 	fmt.Println(unsignedLongInt)
 	//指针
-	var name string = "zhangjie"
+	var name = "zhangjie"
 	ptr := &name
 	// 打印ptr的类型
 	fmt.Printf("ptr type: %T\n", ptr)
