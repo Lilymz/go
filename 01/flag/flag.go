@@ -10,7 +10,7 @@ func main() {
 	var port int
 	var timeout int
 	flag.StringVar(&ip, "ip", "127.0.0.1", "this is ip")
-	flag.IntVar(&port, "port", 8080, "this is ip")
+	flag.IntVar(&port, "port", 8080, "this is port")
 	flag.IntVar(&timeout, "timeout", 3000, "this is timeout")
 	flag.Parse()
 	nFlag := flag.NFlag()

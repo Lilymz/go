@@ -15,7 +15,7 @@ func canException() {
 	// a2就是触发panic能够获取到的数据
 	a2 := recover()
 	if a2 != nil {
-		fmt.Println("已经进行错误处理")
+		fmt.Println("已经进行错误处理,", a2)
 	}
 }
 func throwException() {
