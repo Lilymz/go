@@ -5,7 +5,9 @@ import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/rand"
 	"encoding/base64"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -15,44 +17,49 @@ import (
 	"strings"
 )
 
-func main() {
-	//var compress = &Compress{}
-	//pwd, err := os.Getwd()
-	//if err!=nil{
-	//	log.Printf("获取当前路径失败：%s\n",err.Error())
-	//	return
-	//}
-	//flag.StringVar(&SourcePath,"sourcePath",pwd+"/source.zip","指定一个需要压缩的zip文件:！")
-	//flag.StringVar(&TargetPath,"targetPath",pwd+"/target.zip","请指定当前需要加密zip文件名和路径！")
-	//flag.IntVar(&mode,"mode",0,"请指定一个压缩默认，0：加密压缩！1：解密压缩 ")
-	//flag.StringVar(&Key,"key","","请至少使用一个加密密钥！")
-	//flag.Parse()
-	//compress.SourcePath = SourcePath
-	//compress.TargetPath = TargetPath
-	//compress.Mode = uint(mode)
-	//compress.Key = Key
-	//log.Printf("当前结构：%#v\n",compress)
-	//if compress.Mode==0 {
-	//	log.Printf("使用加密压缩模式开启...")
-	//	ZipToKeyZip(compress)
-	//}else if compress.Mode==1 {
-	//	log.Printf("使用解密压缩模式开启...")
-	//	KeyZipToZip(compress)
-	//}
-
-	content, err := encrypt([]byte("1234567890123456"), []byte("hello1"), aes.BlockSize)
+func startup() {
+	var compress = &Compress{}
+	pwd, err := os.Getwd()
+	if err != nil {
+		log.Printf("获取当前路径失败：%s\n", err.Error())
+		return
+	}
+	flag.StringVar(&SourcePath, "sourcePath", pwd+"/source.zip", "指定一个需要压缩的zip文件:！")
+	flag.StringVar(&TargetPath, "targetPath", pwd+"/target.zip", "请指定当前需要加密zip文件名和路径！")
+	flag.IntVar(&mode, "mode", 0, "请指定一个压缩默认，0：加密压缩！1：解密压缩 ")
+	flag.StringVar(&Key, "key", "", "请至少使用一个加密密钥！")
+	flag.Parse()
+	compress.SourcePath = SourcePath
+	compress.TargetPath = TargetPath
+	compress.Mode = uint(mode)
+	compress.Key = Key
+	log.Printf("当前结构：%#v\n", compress)
+	if compress.Mode == 0 {
+		log.Printf("使用加密压缩模式开启...")
+		ZipToKeyZip(compress)
+	} else if compress.Mode == 1 {
+		log.Printf("使用解密压缩模式开启...")
+		KeyZipToZip(compress)
+	}
+}
+func testAes() {
+	content, err := encrypt([]byte("1234567890123456"), []byte("每天都为你祈祷快乐，每月都为你祝福平安，每季都想着让你幸福，你今年${age}岁了,对了${name}女士，这就是我这2020年大脑的全部工作，2021年来了，我决定继续发扬2020年的精神，额外在给自己一项...."), aes.BlockSize)
 	if err != nil {
 		log.Println("加密错误")
 		return
 	}
 	log.Println("加密内容：" + base64.StdEncoding.EncodeToString(content))
-	decodeString, _ := base64.StdEncoding.DecodeString("idCx4mc+xk7eKFQnMoFXLZIZ+UJkL+cvjx1N3coN23I=")
-	decrypt, err := decrypt([]byte("1234567890123456"), decodeString)
+	//decodeString, _ := base64.StdEncoding.DecodeString("6YzqZcCjPZiOY37dVWSM1Wp6MCsxBy8IwjBb29tnQ8xXuUbeghsBAq37jnB2YM1A9f2+LyGY3LgG1IMhcWmmQlyjmr9bGXI7uiGTg2UBT5gkOIjqFb8vqWQWhJ1GxzEH8XeHVy8yJsi0eJ/zQkwE2q7ynhqWR9T3qqDCRsRcm31iOdUSZE6n44qzGZP/0H/wKOPvkZAV54tsDjcEHuEFelWAMX4dOmomrHrqG6Xs\nuB1RnDPNxUJH41CgjXWPWucyIWUwcitkOJBtOHjNhPojMWc5ndAyZHkgUXjhL86GrJxVyy8W5JoK6gBkQ4LRsxdogIO+ligJEM0hPvFMvr0n9FPiAKEoOcELfexP2+4PxgaBZVX8cWSEQOBRzQ19132C9l2rA8UFK/pwaz6S2WKKmbxuGwnjWIIW+WqATkEEgKo=")
+	decrypt, err := decrypt([]byte("1234567890123456"), content)
 	if err != nil {
 		log.Println("加密错误")
 		return
 	}
 	log.Println("解密内容：" + string(decrypt))
+}
+func main() {
+	//startup()
+	testAes()
 }
 
 // ZipToKeyZip 将原始得zip压缩包转化为每个文件以某个key进行加密得文件，在进行压缩
@@ -81,13 +88,14 @@ func ZipToKeyZip(compressBean *Compress) {
 		}
 		data := make([]byte, file.CompressedSize64)
 		fileReader.Read(data)
-
 		ciphertext, err := encrypt([]byte(compressBean.Key), []byte(strings.TrimSpace(string(data))), aes.BlockSize)
 		if err != nil {
 			log.Println("加密失败:", err)
 			return
 		}
 		if strings.Contains(file.Name, "txt") {
+			fmt.Println("txt:" + string(data))
+			fmt.Println(base64.StdEncoding.EncodeToString(ciphertext))
 			decrypt, err := decrypt([]byte(compressBean.Key), []byte(base64.StdEncoding.EncodeToString(ciphertext)))
 			if err != nil {
 				log.Println("验证解密结果：" + string(decrypt))
@@ -245,12 +253,12 @@ func encrypt(key, plaintext []byte, blockSize int) ([]byte, error) {
 	// 使用 AES 加密的 CBC 模式
 	paddedPlaintext := pkcs7Pad(plaintext, blockSize) // 填充明文
 	ciphertext := make([]byte, blockSize+len(paddedPlaintext))
-	//iv := ciphertext[:blockSize]
-	//if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-	//	return nil, err
-	//}
+	iv := ciphertext[:blockSize]
+	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+		return nil, err
+	}
 
-	mode := cipher.NewCBCEncrypter(block, nil)
+	mode := cipher.NewCBCEncrypter(block, iv)
 	mode.CryptBlocks(ciphertext[blockSize:], paddedPlaintext)
 
 	return ciphertext, nil
